@@ -1,5 +1,5 @@
 // src/auth/userInfo.ts
-// Step 7：获取用户资料（新手版）
+// Step 7：获取用户资料
 //
 // 这个文件是干嘛的？
 // 👉 用 access_token 去 Cognito 拿“当前登录用户的信息”
