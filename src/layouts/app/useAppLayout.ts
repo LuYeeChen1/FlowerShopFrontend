@@ -1,11 +1,15 @@
 // src/layouts/app/useAppLayout.ts
-// 作用：把 AppLayout 的逻辑抽出去，让 AppLayout.vue 只保留 UI（最薄）
+// Step C：AppLayout 逻辑集中管理（新手版）
 //
-// 更新点：
-// 1) userLabel 优先使用缓存的 userInfo（/oauth2/userInfo）
-// 2) 没有缓存 userInfo 时：用 access_token 调 Cognito userInfo，并写入缓存
-// 3) 若 userInfo 拉取失败：fallback 到 decode id_token/access_token
-// 4) Logout：清本地 token + Cognito Hosted UI Global Sign-Out
+// 这个文件是干嘛的？
+// 👉 把 AppLayout 的“逻辑”抽出来
+// 👉 AppLayout.vue 只负责画 UI
+//
+// 这里主要负责：
+// - 导航数据
+// - 当前用户显示名
+// - 初次进入时拉用户信息
+// - Logout 行为
 
 import { clearOAuthToken, readOAuthToken } from "@/auth";
 import { decodeJwtPayload } from "@/utils/jwt";
@@ -19,10 +23,14 @@ import type { CognitoTokenResponse } from "@/auth/token";
 import { readOAuthUserInfo, saveOAuthUserInfo } from "@/auth/storage";
 import { fetchUserInfo, type CognitoUserInfo } from "@/auth/userInfo";
 
+// storage 里读出来的 token 结构
 type StoredToken = CognitoTokenResponse & {
   obtained_at?: number;
 };
 
+// -------------------------------
+// 从 userInfo 生成展示用名字
+// -------------------------------
 function labelFromUserInfo(info: CognitoUserInfo | null): string {
   if (!info) return "";
 
@@ -35,6 +43,9 @@ function labelFromUserInfo(info: CognitoUserInfo | null): string {
   return "";
 }
 
+// -------------------------------
+// 从 JWT 解码生成展示名（兜底）
+// -------------------------------
 function labelFromJwt(token: StoredToken | null): string {
   const jwt = token?.id_token || token?.access_token;
   if (!jwt) return "";
@@ -52,33 +63,39 @@ function labelFromJwt(token: StoredToken | null): string {
   return "";
 }
 
+// -------------------------------
+// AppLayout 对外使用的组合函数
+// -------------------------------
 export function useAppLayout() {
   const route = useRoute();
 
-  // 移动端菜单开关
+  // 移动端菜单是否展开
   const mobileOpen = ref(false);
 
-  // 导航定义（集中在 nav.ts）
+  // 导航数据（来自 nav.ts）
   const nav = APP_NAV;
 
-  // 判断当前路由高亮（支持子路由）
+  // 当前路由是否高亮
   function isActive(path: string) {
     return route.path === path || route.path.startsWith(path + "/");
   }
 
-  // 缓存的 userInfo（优先用于展示）
+  // 缓存的用户信息（优先展示）
   const userInfo = ref<CognitoUserInfo | null>(readOAuthUserInfo());
 
-  // UI 展示 label：优先 userInfo，其次 JWT decode
+  // 页面右上角显示的用户名
   const userLabel = computed(() => {
+    // 先用 userInfo
     const fromInfo = labelFromUserInfo(userInfo.value);
     if (fromInfo) return fromInfo;
 
+    // 再用 JWT 解码兜底
     const token = readOAuthToken<StoredToken>();
     return labelFromJwt(token);
   });
 
-  // 初次进入 AppLayout：如果没有 userInfo 缓存且已登录，就去 Cognito 拉一次
+  // 第一次进入 AppLayout 时
+  // 如果没有 userInfo 缓存，就去 Cognito 拉一次
   onMounted(async () => {
     if (userInfo.value) return;
 
@@ -91,15 +108,17 @@ export function useAppLayout() {
       userInfo.value = info;
       saveOAuthUserInfo(info);
     } catch {
-      // 拉不到就算了：保持 fallback（不要阻塞页面）
+      // 拉失败就算了，不影响页面
     }
   });
 
-  // Logout：清 token + Cognito Hosted UI Global Sign-Out
+  // 登出逻辑
   function logout() {
+    // 清本地 token
     clearOAuthToken();
     mobileOpen.value = false;
 
+    // 跳转到 Cognito 的全局登出
     const logoutUrl =
       `${COGNITO_DOMAIN}/logout` +
       `?client_id=${encodeURIComponent(CLIENT_ID)}` +

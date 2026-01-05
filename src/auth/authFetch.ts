@@ -1,40 +1,53 @@
 // src/auth/authFetch.ts
-// 作用：
-// 1) 自动从 sessionStorage 读取 access_token
-// 2) 自动附带 Authorization: Bearer <token>
-// 3) 当传入的是相对路径时，自动拼接 API_BASE
-// 4) 请求前：若 token 快过期（expires_in + obtained_at），先 refresh 再请求
-// 5) 兜底：如果仍返回 401，再 refresh 一次并重试一次（只重试一次）
+// Step 6：带登录状态的 fetch（新手版）
+//
+// 这个文件是干嘛的？
+// 👉 用来「自动帮你处理 token」再发 API 请求
+//
+// 你用它的好处：
+// - 不用自己读 token
+// - 不用自己加 Authorization header
+// - token 快过期会自动刷新
+// - 遇到 401 会自动再试一次
+//
+// 页面 / service 只管：
+// 👉 authFetch("/me")
 
 import { API_BASE } from "./apiConfig";
 import { clearOAuthToken, readOAuthToken, saveOAuthToken } from "./storage";
 import { refreshToken, type CognitoTokenResponse } from "./token";
 
+// 扩展 fetch 的参数
 type AuthFetchInit = RequestInit & {
-  // 是否允许匿名请求（默认 false）
+  // 是否允许不登录也能请求
   allowAnonymous?: boolean;
 };
 
+// storage 里读出来的 token 结构
 type StoredToken = CognitoTokenResponse & {
-  obtained_at?: number; // storage.ts 保存的时间戳（ms）
+  obtained_at?: number; // token 获取时间
 };
 
+// 把 headers 转成 Headers 对象
 function toHeaders(input?: HeadersInit): Headers {
   if (!input) return new Headers();
   return input instanceof Headers ? new Headers(input) : new Headers(input);
 }
 
+// 把相对路径变成完整 API 地址
 function buildUrl(path: string): string {
   return path.startsWith("http") ? path : `${API_BASE}${path}`;
 }
 
-async function doFetch(
+// 真正发请求的地方
+function doFetch(
   url: string,
   init: RequestInit,
   accessToken?: string
 ): Promise<Response> {
   const finalHeaders = toHeaders(init.headers);
 
+  // 有 token 就加 Authorization
   if (accessToken) {
     finalHeaders.set("Authorization", `Bearer ${accessToken}`);
   } else {
@@ -47,33 +60,43 @@ async function doFetch(
   });
 }
 
-// 判断 token 是否“快过期”
-// bufferSeconds：提前多少秒刷新（默认 60 秒）
-function isTokenExpiringSoon(token: StoredToken | null, bufferSeconds = 60): boolean {
+// 判断 token 会不会很快过期
+// 提前 60 秒刷新
+function isTokenExpiringSoon(
+  token: StoredToken | null,
+  bufferSeconds = 60
+): boolean {
+  // 没 token，当作要刷新
   if (!token?.access_token) return true;
 
   const obtainedAt = token.obtained_at ?? 0;
   const expiresIn = token.expires_in ?? 0;
 
-  // 没有 obtained_at 或 expires_in 就无法可靠判断，交给 401 兜底
+  // 信息不完整，交给 401 再处理
   if (!obtainedAt || !expiresIn) return false;
 
   const expireAtMs = obtainedAt + expiresIn * 1000;
   const nowMs = Date.now();
 
-  return nowMs >= (expireAtMs - bufferSeconds * 1000);
+  return nowMs >= expireAtMs - bufferSeconds * 1000;
 }
 
-async function tryRefreshOnce(token: StoredToken | null): Promise<StoredToken | null> {
+// 尝试刷新一次 token
+async function tryRefreshOnce(
+  token: StoredToken | null
+): Promise<StoredToken | null> {
   const rt = token?.refresh_token;
   if (!rt) return null;
 
   const newToken = await refreshToken(rt);
-  // storage.ts 会 merge 保留旧 refresh_token，并写 obtained_at
+
+  // 保存新 token（storage 会自动合并）
   saveOAuthToken(newToken);
+
   return readOAuthToken<StoredToken>();
 }
 
+// 对外使用的 fetch
 export async function authFetch(
   path: string,
   init: AuthFetchInit = {}
@@ -84,12 +107,13 @@ export async function authFetch(
   let token = readOAuthToken<StoredToken>();
   let accessToken = token?.access_token;
 
+  // 需要登录但没有 token
   if (!accessToken && !allowAnonymous) {
     throw new Error("未登录或 access_token 不存在");
   }
 
-  // 请求前：快过期就先 refresh（不等 401）
-  if (!allowAnonymous && isTokenExpiringSoon(token, 60)) {
+  // 请求前：如果 token 快过期，先刷新
+  if (!allowAnonymous && isTokenExpiringSoon(token)) {
     try {
       const refreshed = await tryRefreshOnce(token);
       if (refreshed?.access_token) {
@@ -97,7 +121,7 @@ export async function authFetch(
         accessToken = refreshed.access_token;
       }
     } catch {
-      // 预刷新失败：清掉本地 token，让上层决定要不要重新登录
+      // 刷新失败，清掉 token
       clearOAuthToken();
       throw new Error("token 刷新失败：请重新登录");
     }
@@ -111,9 +135,10 @@ export async function authFetch(
   // 如果不是 401，直接返回
   if (resp1.status !== 401) return resp1;
 
-  // 401 兜底：再尝试 refresh 一次 + 重试一次
+  // 如果允许匿名，401 就直接返回
   if (allowAnonymous) return resp1;
 
+  // 401：再刷新一次，再试一次
   try {
     const refreshed = await tryRefreshOnce(token);
     const newAccess = refreshed?.access_token;
