@@ -64,6 +64,7 @@ onMounted(async () => {
 
     data.value = await resp.json();
     status.value = "ok";
+    
   } catch (e: any) {
     // authFetch 在无 token 时会抛错
     if (String(e?.message || e).includes("未登录")) {

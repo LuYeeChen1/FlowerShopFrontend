@@ -1,18 +1,19 @@
 // src/auth/index.ts
 // 作用：auth 模块统一出口（barrel file）
+// 页面/业务层只 import "@/auth" 即可
 
 export { login } from "./oauth";
 
 export {
-    clearOAuthToken,
-    consumeOAuthTemp,
-    readOAuthToken,
-    saveOAuthTemp,
-    saveOAuthToken
+    clearOAuthToken, consumeOAuthTemp, readOAuthToken, readOAuthUserInfo, saveOAuthTemp, saveOAuthToken, saveOAuthUserInfo
 } from "./storage";
 
-// NodeNext/Node16 下要写 .js（TS 会自动映射到 .ts 源文件）
-export { authFetch } from "./authFetch.js";
-export { handleOAuthCallback } from "./callback.js";
-export type { CognitoTokenResponse } from "./token.js";
+export { handleOAuthCallback } from "./callback";
 
+export { exchangeToken, refreshToken } from "./token";
+export type { CognitoTokenResponse } from "./token";
+
+export { fetchUserInfo } from "./userInfo";
+export type { CognitoUserInfo } from "./userInfo";
+
+export { authFetch } from "./authFetch";

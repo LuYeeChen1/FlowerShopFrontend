@@ -15,11 +15,18 @@
 
 <script setup lang="ts">
 // 作用：OAuth 回调页（最薄）
-// - 把所有逻辑交给 auth：handleOAuthCallback()
+// - handleOAuthCallback()：换 token + 存 token
+// - 成功后：立刻 fetchUserInfo(access_token) 并缓存（让 AppLayout 立刻显示 email）
 // - 成功：清理 URL + 跳转到 dashboard (/app/me)
 // - 失败：显示错误
 
-import { handleOAuthCallback } from "@/auth";
+import {
+  fetchUserInfo,
+  handleOAuthCallback,
+  readOAuthToken,
+  saveOAuthUserInfo,
+} from "@/auth";
+import type { CognitoTokenResponse } from "@/auth/token";
 import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
@@ -30,12 +37,26 @@ const errorMessage = ref("");
 
 onMounted(async () => {
   try {
+    // 1) 换 token + 存 token
     await handleOAuthCallback(route.query as any);
 
-    // 清理 URL（移除 code/state）
+    // 2) 立刻拉 userInfo 并缓存（不阻塞登录流程：拉不到就忽略）
+    const token = readOAuthToken<CognitoTokenResponse>();
+    const accessToken = token?.access_token;
+
+    if (accessToken) {
+      try {
+        const info = await fetchUserInfo(accessToken);
+        saveOAuthUserInfo(info);
+      } catch {
+        // ignore：AppLayout 还有 JWT fallback，不要因为 userInfo 拉取失败就挡住登录
+      }
+    }
+
+    // 3) 清理 URL（移除 code/state）
     await router.replace({ path: route.path, query: {} });
 
-    // 进入 dashboard
+    // 4) 进入 dashboard
     await router.replace("/app/me");
   } catch (e: any) {
     errorMessage.value = e?.message || String(e);
