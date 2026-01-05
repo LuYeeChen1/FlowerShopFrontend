@@ -1,5 +1,5 @@
 // src/auth/oauth.ts
-// Step 3：OAuth 登录入口（新手版）
+// Step 3：OAuth 登录入口
 //
 // 这个文件是干嘛的？
 // 👉 真正“开始登录”的地方
