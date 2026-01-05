@@ -112,15 +112,18 @@ export function useAppLayout() {
     }
   });
 
-  // 登出逻辑
+  // -------------------------------
+  // Logout：Cognito Hosted UI 全局登出
+  // -------------------------------
   function logout() {
     // 清本地 token
     clearOAuthToken();
     mobileOpen.value = false;
 
     // 跳转到 Cognito 的全局登出
+    const domain = COGNITO_DOMAIN.replace(/\/$/, "");
     const logoutUrl =
-      `${COGNITO_DOMAIN}/logout` +
+      `${domain}/logout` +
       `?client_id=${encodeURIComponent(CLIENT_ID)}` +
       `&logout_uri=${encodeURIComponent(LOGOUT_REDIRECT_URI)}`;
 
