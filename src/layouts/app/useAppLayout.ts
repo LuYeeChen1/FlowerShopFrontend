@@ -17,7 +17,7 @@ import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { APP_NAV } from "./nav";
 
-import { CLIENT_ID, COGNITO_DOMAIN, REDIRECT_URI } from "@/auth/config";
+import { CLIENT_ID, COGNITO_DOMAIN, LOGOUT_REDIRECT_URI } from "@/auth/config";
 import type { CognitoTokenResponse } from "@/auth/token";
 
 import { readOAuthUserInfo, saveOAuthUserInfo } from "@/auth/storage";
@@ -122,7 +122,7 @@ export function useAppLayout() {
     const logoutUrl =
       `${COGNITO_DOMAIN}/logout` +
       `?client_id=${encodeURIComponent(CLIENT_ID)}` +
-      `&logout_uri=${encodeURIComponent(REDIRECT_URI)}`;
+      `&logout_uri=${encodeURIComponent(LOGOUT_REDIRECT_URI)}`;
 
     window.location.assign(logoutUrl);
   }
