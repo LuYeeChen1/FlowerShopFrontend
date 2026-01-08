@@ -2,9 +2,8 @@
 （功能与文件组合对应关系｜最终严格一致版）
 
 > 约束说明  
-> - 本文档 **100% 严格对齐你提供的终端命令记录**  
+> - 本文档 **对齐当前代码**  
 > - **只列出真实存在且被使用的文件**  
-> - **不存在任何多余 / 臆测 / 虚构文件**  
 > - 每一个文件 **至少在一个功能点中出现一次**
 
 ---
@@ -17,7 +16,7 @@
 
 **文件组合**
 - `index.html`  
-  - SPA 挂载入口，加载前端应用
+  - SPA 挂载入口
 - `src/main.js`  
   - 创建 Vue App  
   - 挂载 Router  
@@ -27,12 +26,9 @@
 - `src/App.vue`  
   - 顶层组件，仅渲染 `<router-view />`
 - `src/router/index.js`  
-  - 定义路由结构：  
-    `/`、`/callback`、`/signed-out`、`/app/*`
+  - 定义路由结构：`/`、`/callback`、`/signed-out`、`/app/*`
 - `vite.config.js`  
-  - Vite 构建配置  
-  - Vue / Tailwind 插件  
-  - 路径别名 `@ -> src`
+  - Vite 构建配置
 - `package.json`  
   - 项目依赖与脚本（dev / build / preview）
 
@@ -50,17 +46,17 @@
 - `src/pages/Auth.vue`  
   - 登录入口页面 UI  
   - 触发登录流程
-- `src/auth/oauth.ts`  
+- `src/auth/login/oauth.ts`  
   - 生成 state  
   - 调用 PKCE 工具  
   - 拼接 Cognito authorize URL  
   - 执行浏览器跳转
-- `src/auth/pkce.ts`  
+- `src/auth/login/pkce.ts`  
   - 生成 PKCE verifier  
   - 生成 PKCE challenge（SHA-256 + base64url）
-- `src/auth/storage.ts`  
-  - 保存临时 OAuth 数据（state / verifier）
-- `src/auth/config.ts`  
+- `src/auth/storage/tempStorage.ts`  
+  - 保存 OAuth 临时数据（state / verifier）
+- `src/auth/config/cognito.ts`  
   - Cognito OAuth 配置  
   - domain / client_id / redirect_uri（来自 env）
 
@@ -77,23 +73,23 @@ Cognito 登录完成后回调：
   - 回调页面 UI  
   - 显示加载 / 错误状态  
   - 触发回调处理逻辑
-- `src/auth/callback.ts`  
+- `src/auth/callback/handleCallback.ts`  
   - 校验 state  
   - 使用授权码换 token  
   - 保存 token  
-  - 协调拉取 userInfo  
-  - 控制最终跳转
-- `src/auth/token.ts`  
-  - authorization code → token  
-  - refresh_token → 新 token
-- `src/auth/storage.ts`  
-  - 读取 OAuth 临时数据  
-  - 保存 access_token / refresh_token / 过期时间  
+  - 协调拉取 userInfo
+- `src/auth/callback/tokenExchange.ts`  
+  - authorization code → token
+- `src/auth/request/tokenTypes.ts`  
+  - token 响应结构类型定义
+- `src/auth/storage/tokenStorage.ts`  
+  - 保存 access_token / refresh_token / 获取时间
+- `src/auth/storage/userInfoStorage.ts`  
   - 缓存 userInfo
 - `src/auth/userInfo.ts`  
   - 请求 Cognito `/oauth2/userInfo`
-- `src/auth/config.ts`  
-  - token / userInfo 端点所需 Cognito 配置
+- `src/auth/config/cognito.ts`  
+  - token / userInfo 端点配置
 
 ---
 
@@ -106,18 +102,19 @@ Cognito 登录完成后回调：
 401 时自动重试一次。
 
 **文件组合**
-- `src/auth/authFetch.ts`  
+- `src/auth/request/authFetch.ts`  
   - 核心封装逻辑  
   - token 判断  
   - refresh 调度  
   - 401 重试
-- `src/auth/storage.ts`  
-  - 提供 token / userInfo 数据
-- `src/auth/token.ts`  
-  - refresh token 实现
-- `src/auth/apiConfig.ts`  
-  - API_BASE  
-  - 用于拼接后端请求地址
+- `src/auth/request/refreshToken.ts`  
+  - refresh_token → 新 token
+- `src/auth/request/tokenTypes.ts`  
+  - token 响应类型
+- `src/auth/storage/tokenStorage.ts`  
+  - 读取 / 保存 token
+- `src/auth/config/api.ts`  
+  - API_BASE，用于拼接请求地址
 
 ---
 
@@ -139,22 +136,26 @@ Cognito 登录完成后回调：
   - Logout 按钮  
   - 移动端菜单入口
 - `src/layouts/app/AppMobileNav.vue`  
-  - 移动端导航列表  
-  - 用户信息展示
+  - 移动端导航列表
 - `src/layouts/app/nav.ts`  
-  - 导航项配置（Me / Orders / Products / Admin）
+  - 导航项配置（当前仅 Me）
 - `src/layouts/app/useAppLayout.ts`  
   - 聚合逻辑：  
     - 当前用户显示名  
     - userInfo 拉取协调  
     - Logout 行为封装
+- `src/auth/display/userLabel.ts`  
+  - 从 userInfo / JWT 生成展示名
+- `src/auth/userInfo.ts`  
+  - Cognito userInfo 请求
+- `src/auth/storage/userInfoStorage.ts`  
+  - userInfo 缓存
 - `src/utils/jwt.ts`  
-  - 当 userInfo 不可用时  
-  - 解析 JWT payload 作为兜底展示
-- `src/auth/config.ts`  
+  - JWT payload 解码（UI 兜底）
+- `src/auth/config/cognito.ts`  
   - Cognito logout 域名与 redirect 配置
-- `src/auth/storage.ts`  
-  - 登出时清理 token / userInfo / OAuth 临时数据
+- `src/auth/storage/tokenStorage.ts`  
+  - 登出时清理 token
 
 ---
 
@@ -168,11 +169,11 @@ Cognito 登录完成后回调：
 - `src/pages/Me.vue`  
   - 页面 UI 与业务逻辑  
   - 调用 `authFetch("/me")`
-- `src/auth/authFetch.ts`  
+- `src/auth/request/authFetch.ts`  
   - 自动携带 / 刷新 token
-- `src/auth/apiConfig.ts`  
+- `src/auth/config/api.ts`  
   - API_BASE 拼接请求地址
-- `src/auth/storage.ts`  
+- `src/auth/storage/tokenStorage.ts`  
   - 提供 token（间接参与）
 
 ---
@@ -198,23 +199,4 @@ Auth 模块统一导出入口（barrel file），
 
 **文件组合**
 - `src/auth/index.ts`
-
----
-
-## 九、仓库说明文件
-
-**功能**  
-项目说明文档，不参与运行时逻辑。
-
-**文件组合**
-- `README.md`
-
----
-
-## ✅ 最终确认
-
-- ✔ **文件 100% 来自你真实项目**
-- ✔ **没有 AGENTS.md**
-- ✔ **没有任何多余文件**
-- ✔ **可直接作为最终交付文档**
-
+- `src/auth/storage/index.ts`

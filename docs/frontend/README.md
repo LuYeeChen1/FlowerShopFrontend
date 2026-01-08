@@ -12,7 +12,7 @@
 ## 文档结构一览
 
 1. `OVERVIEW.md`  
-   → 项目总体实现了什么（一句话到一页级别）
+   → 项目总体做了什么（高层概览）
 
 2. `ARCHITECTURE.md`  
    → 前端整体架构与模块边界
@@ -24,7 +24,7 @@
    → 安全设计、PKCE、state、token 存储与边界
 
 5. `ROUTING_MODEL.md`  
-   → 路由分区、受保护区域、页面职责
+   → 路由分区、重定向与受保护区域
 
 6. `AUTH_FETCH.md`  
    → 登录态 API 请求与 token 自动刷新机制
@@ -36,9 +36,12 @@
    → 登录后布局、导航、Logout 设计
 
 9. `FILE_MAPPING.md`  
-   → 功能 → 文件的完整映射表
+   → 功能 → 文件的快速映射表（简版）
 
-10. `VERIFICATION_CHECKLIST.md`  
+10. `FEATURE_FILE_MAPPING.md`  
+    → 功能 → 文件的完整映射表（详版）
+
+11. `VERIFICATION_CHECKLIST.md`  
     → 可验证清单（老师 / Review / Demo）
 
 ---
