@@ -1,4 +1,4 @@
-// src/auth/authFetch.ts
+// src/auth/request/authFetch.ts
 // Step 6：带登录状态的 fetch（新手版）
 //
 // 这个文件是干嘛的？
@@ -13,9 +13,10 @@
 // 页面 / service 只管：
 // 👉 authFetch("/me")
 
-import { API_BASE } from "./apiConfig";
-import { clearOAuthToken, readOAuthToken, saveOAuthToken } from "./storage";
-import { refreshToken, type CognitoTokenResponse } from "./token";
+import { API_BASE } from "../config/api";
+import { clearOAuthToken, readOAuthToken, saveOAuthToken } from "../storage/tokenStorage";
+import { refreshToken } from "./refreshToken";
+import type { CognitoTokenResponse } from "./tokenTypes";
 
 // 扩展 fetch 的参数
 type AuthFetchInit = RequestInit & {

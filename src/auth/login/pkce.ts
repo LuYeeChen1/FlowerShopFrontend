@@ -1,4 +1,4 @@
-// src/auth/pkce.ts
+// src/auth/login/pkce.ts
 // Step 1：PKCE 工具函数
 //
 // 为什么要有这个文件？

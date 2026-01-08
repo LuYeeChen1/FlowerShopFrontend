@@ -12,14 +12,14 @@
 // - Logout 行为
 
 import { clearOAuthToken, readOAuthToken } from "@/auth";
-import { decodeJwtPayload } from "@/utils/jwt";
 import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { APP_NAV } from "./nav";
 
-import { CLIENT_ID, COGNITO_DOMAIN, LOGOUT_REDIRECT_URI } from "@/auth/config";
-import type { CognitoTokenResponse } from "@/auth/token";
+import { CLIENT_ID, COGNITO_DOMAIN, LOGOUT_REDIRECT_URI } from "@/auth/config/cognito";
+import type { CognitoTokenResponse } from "@/auth/request/tokenTypes";
 
+import { labelFromJwt, labelFromUserInfo } from "@/auth/display/userLabel";
 import { readOAuthUserInfo, saveOAuthUserInfo } from "@/auth/storage";
 import { fetchUserInfo, type CognitoUserInfo } from "@/auth/userInfo";
 
@@ -28,40 +28,7 @@ type StoredToken = CognitoTokenResponse & {
   obtained_at?: number;
 };
 
-// -------------------------------
-// 从 userInfo 生成展示用名字
-// -------------------------------
-function labelFromUserInfo(info: CognitoUserInfo | null): string {
-  if (!info) return "";
-
-  if (info.email) return String(info.email);
-  if (info.name) return String(info.name);
-  if (info.preferred_username) return String(info.preferred_username);
-  if (info.username) return String(info.username);
-  if (info.sub) return `sub: ${String(info.sub).slice(0, 8)}…`;
-
-  return "";
-}
-
-// -------------------------------
-// 从 JWT 解码生成展示名（兜底）
-// -------------------------------
-function labelFromJwt(token: StoredToken | null): string {
-  const jwt = token?.id_token || token?.access_token;
-  if (!jwt) return "";
-
-  const payload: any = decodeJwtPayload(jwt);
-  if (!payload) return "";
-
-  if (payload.email) return String(payload.email);
-  if (payload.name) return String(payload.name);
-  if (payload.preferred_username) return String(payload.preferred_username);
-  if (payload["cognito:username"]) return String(payload["cognito:username"]);
-  if (payload.username) return String(payload.username);
-  if (payload.sub) return `sub: ${String(payload.sub).slice(0, 8)}…`;
-
-  return "";
-}
+// labelFromUserInfo / labelFromJwt 已抽到 display/userLabel.ts
 
 // -------------------------------
 // AppLayout 对外使用的组合函数

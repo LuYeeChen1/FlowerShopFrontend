@@ -26,7 +26,7 @@ import {
   readOAuthToken,
   saveOAuthUserInfo,
 } from "@/auth";
-import type { CognitoTokenResponse } from "@/auth/token";
+import type { CognitoTokenResponse } from "@/auth";
 import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 

@@ -1,4 +1,4 @@
-// src/auth/config.ts
+// src/auth/config/cognito.ts
 // Step 0：Auth 配置文件
 //
 // 这个文件是干嘛的？

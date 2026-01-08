@@ -13,7 +13,7 @@
 // - 不刷新 token
 // - 不存数据（存由 storage.ts 负责）
 
-import { COGNITO_DOMAIN } from "./config";
+import { COGNITO_DOMAIN } from "./config/cognito";
 
 // Cognito userInfo 接口返回的数据结构
 // 这里只列常见字段，其它的先不管
