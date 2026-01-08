@@ -1,4 +1,4 @@
-// src/auth/apiConfig.ts
+// src/auth/config/api.ts
 // Step A：后端 API 配置文件
 //
 // 这个文件是干嘛的？

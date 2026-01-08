@@ -1,4 +1,4 @@
-// src/auth/oauth.ts
+// src/auth/login/oauth.ts
 // Step 3：OAuth 登录入口
 //
 // 这个文件是干嘛的？
@@ -12,9 +12,9 @@
 //
 // 这里不处理回调、不处理 token。
 
-import { CLIENT_ID, COGNITO_DOMAIN, REDIRECT_URI, SCOPES } from "./config";
+import { CLIENT_ID, COGNITO_DOMAIN, REDIRECT_URI, SCOPES } from "../config/cognito";
 import { pkceChallenge } from "./pkce";
-import { saveOAuthTemp } from "./storage";
+import { saveOAuthTemp } from "../storage/tempStorage";
 
 // 生成随机字符串
 // 用浏览器自带的安全随机方法

@@ -1,4 +1,4 @@
-// src/auth/callback.ts
+// src/auth/callback/handleCallback.ts
 // Step 4：OAuth 回调处理（新手版）
 //
 // 这个文件是干嘛的？
@@ -17,13 +17,11 @@
 // 页面（Callback.vue）
 // 👉 只负责调用这个函数，不写任何业务逻辑
 
-import {
-  consumeOAuthTemp,
-  saveOAuthToken,
-  saveOAuthUserInfo,
-} from "./storage";
-import { exchangeToken } from "./token";
-import { fetchUserInfo } from "./userInfo";
+import { consumeOAuthTemp } from "../storage/tempStorage";
+import { saveOAuthToken } from "../storage/tokenStorage";
+import { saveOAuthUserInfo } from "../storage/userInfoStorage";
+import { exchangeToken } from "./tokenExchange";
+import { fetchUserInfo } from "../userInfo";
 
 // 处理 OAuth 回调
 // query 来自 URL，例如 ?code=xxx&state=yyy

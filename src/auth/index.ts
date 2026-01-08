@@ -14,29 +14,30 @@
 // - 不访问网络
 
 // 登录入口
-export { login } from "./oauth";
+export { login } from "./login/oauth";
 
 // 存储相关（token / 临时数据 / userInfo）
 export {
-    clearOAuthToken,
-    consumeOAuthTemp,
-    readOAuthToken,
-    readOAuthUserInfo,
-    saveOAuthTemp,
-    saveOAuthToken,
-    saveOAuthUserInfo
+  clearOAuthToken,
+  consumeOAuthTemp,
+  readOAuthToken,
+  readOAuthUserInfo,
+  saveOAuthTemp,
+  saveOAuthToken,
+  saveOAuthUserInfo,
 } from "./storage";
 
 // OAuth 回调处理
-export { handleOAuthCallback } from "./callback";
+export { handleOAuthCallback } from "./callback/handleCallback";
 
 // token 交换与刷新
-export { exchangeToken, refreshToken } from "./token";
-export type { CognitoTokenResponse } from "./token";
+export { exchangeToken } from "./callback/tokenExchange";
+export { refreshToken } from "./request/refreshToken";
+export type { CognitoTokenResponse } from "./request/tokenTypes";
 
 // 用户资料
 export { fetchUserInfo } from "./userInfo";
 export type { CognitoUserInfo } from "./userInfo";
 
 // 带登录状态的 fetch
-export { authFetch } from "./authFetch";
+export { authFetch } from "./request/authFetch";
