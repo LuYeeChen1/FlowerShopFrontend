@@ -66,22 +66,18 @@ function labelFromJwt(token: StoredToken | null): string {
 // -------------------------------
 // AppLayout 对外使用的组合函数
 // -------------------------------
+const mobileOpen = ref(false);
+const nav = APP_NAV;
+const userInfo = ref<CognitoUserInfo | null>(readOAuthUserInfo());
+const hasFetchedUserInfo = ref(false);
+
 export function useAppLayout() {
   const route = useRoute();
-
-  // 移动端菜单是否展开
-  const mobileOpen = ref(false);
-
-  // 导航数据（来自 nav.ts）
-  const nav = APP_NAV;
 
   // 当前路由是否高亮
   function isActive(path: string) {
     return route.path === path || route.path.startsWith(path + "/");
   }
-
-  // 缓存的用户信息（优先展示）
-  const userInfo = ref<CognitoUserInfo | null>(readOAuthUserInfo());
 
   // 页面右上角显示的用户名
   const userLabel = computed(() => {
@@ -97,6 +93,9 @@ export function useAppLayout() {
   // 第一次进入 AppLayout 时
   // 如果没有 userInfo 缓存，就去 Cognito 拉一次
   onMounted(async () => {
+    if (hasFetchedUserInfo.value) return;
+    hasFetchedUserInfo.value = true;
+
     if (userInfo.value) return;
 
     const token = readOAuthToken<StoredToken>();
@@ -119,6 +118,7 @@ export function useAppLayout() {
     // 清本地 token
     clearOAuthToken();
     mobileOpen.value = false;
+    userInfo.value = null;
 
     // 跳转到 Cognito 的全局登出
     const domain = COGNITO_DOMAIN.replace(/\/$/, "");
