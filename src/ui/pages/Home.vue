@@ -6,10 +6,10 @@
           FlowerShop Auth
         </p>
         <h1 class="text-3xl font-bold sm:text-4xl">
-          Cognito 登录与注册
+          Cognito 认证入口
         </h1>
         <p class="text-base text-slate-300">
-          通过 Hosted UI 完成注册与登入，回调后在前端保存 token，供后续接入后端使用。
+          通过 Hosted UI 完成认证，回调后在前端保存 token，供后续接入后端使用。
         </p>
       </header>
 
@@ -20,6 +20,9 @@
             <p class="text-xl font-semibold">
               {{ statusLabel }}
             </p>
+            <p v-if="userEmail" class="text-sm text-emerald-200">
+              {{ userEmail }}
+            </p>
             <p v-if="statusDetail" class="text-sm text-slate-400">
               {{ statusDetail }}
             </p>
@@ -28,23 +31,17 @@
             <button
               class="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-emerald-400"
               type="button"
-              @click="startAuth('signIn')"
+              @click="startAuth"
             >
-              立即登录
+              Start Authenticate
             </button>
             <button
-              class="rounded-lg border border-emerald-400/60 px-4 py-2 text-sm font-semibold text-emerald-200 hover:border-emerald-300"
-              type="button"
-              @click="startAuth('signUp')"
-            >
-              注册账号
-            </button>
-            <button
-              class="rounded-lg border border-slate-600 px-4 py-2 text-sm font-semibold text-slate-200 hover:border-slate-400"
+              v-if="session"
+              class="rounded-lg border border-rose-400/70 px-4 py-2 text-sm font-semibold text-rose-100 hover:bg-rose-500/20"
               type="button"
               @click="signOut"
             >
-              登出
+              Logout
             </button>
           </div>
         </div>
@@ -68,7 +65,7 @@
         <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
           <h2 class="text-lg font-semibold">流程说明</h2>
           <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm text-slate-300">
-            <li>点击“登录”或“注册”跳转至 Cognito Hosted UI。</li>
+            <li>点击“Start Authenticate”跳转至 Cognito Hosted UI。</li>
             <li>完成认证后跳转至 /callback，由前端交换 token。</li>
             <li>成功后 token 存入 localStorage，供后续 API 调用。</li>
           </ol>
@@ -102,6 +99,31 @@ const statusDetail = computed(() => {
   return "token 已保存在 localStorage。";
 });
 
+const decodeJwtPayload = (token) => {
+  if (!token) {
+    return null;
+  }
+  const parts = token.split(".");
+  if (parts.length < 2) {
+    return null;
+  }
+  const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+  const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+  try {
+    return JSON.parse(atob(padded));
+  } catch (error) {
+    return null;
+  }
+};
+
+const userEmail = computed(() => {
+  if (!session.value) {
+    return "";
+  }
+  const payload = decodeJwtPayload(session.value.idToken);
+  return payload?.email || "";
+});
+
 const previewToken = (token) => {
   if (!token) {
     return "-";
@@ -109,10 +131,10 @@ const previewToken = (token) => {
   return `${token.slice(0, 20)}...${token.slice(-8)}`;
 };
 
-const startAuth = async (mode) => {
+const startAuth = async () => {
   errorMessage.value = "";
   try {
-    const url = await authContainer.startAuthUseCase.execute({ mode });
+    const url = await authContainer.startAuthUseCase.execute({ mode: "signIn" });
     window.location.assign(url);
   } catch (error) {
     errorMessage.value = error.message || "无法发起认证流程。";
@@ -122,10 +144,10 @@ const startAuth = async (mode) => {
 const signOut = () => {
   errorMessage.value = "";
   try {
-    const url = authContainer.signOutUseCase.execute();
-    window.location.assign(url);
+    const logoutUrl = authContainer.signOutUseCase.execute();
+    window.location.assign(logoutUrl);
   } catch (error) {
-    errorMessage.value = error.message || "无法完成登出。";
+    errorMessage.value = error.message || "无法退出登录。";
   }
 };
 
