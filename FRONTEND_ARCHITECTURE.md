@@ -1,326 +1,233 @@
-好，这里我直接给你一份**「项目无关、可长期复用」的前端 Clean Architecture 规范文档**。
-**不绑定 FlowerShop、不绑定 Vue / React、不绑定具体技术栈**，而是**理念 + 可落地结构**。
-
-你可以把它当成：
-
-* 📄 团队规范
-* 📄 AI / Codex System Prompt 的一部分
-* 📄 任意中大型前端项目的冻结架构文档
-
-下面内容我会**直接以 `.md` 正文形式给你**，你可以原样保存。
+明白。下面只给**前端通用 Clean Architecture 架构**：分层、依赖方向、每层放什么、不放什么、目录模板与边界规则。没有任何“AI/Codex职责”。
 
 ---
 
-````md
-# Frontend Clean Architecture Canon
+# Frontend Clean Architecture（通用版）
 
-> 目标：在前端项目中实现 **长期可维护、可演进、框架可替换** 的架构，
-> 通过清晰的分层与依赖规则，防止业务逻辑腐烂。
+## 1) 目标与约束
 
----
+### 目标
 
-## 1. 设计原则（Design Principles）
+* 业务逻辑可测试、可复用、可替换 UI/框架
+* 网络/存储/路由等外部细节可替换
+* 代码结构稳定：新增功能主要“加文件”，不是“改一堆旧文件”
 
-### 1.1 核心目标
+### 核心约束：依赖方向
 
-- **业务逻辑独立于 UI**
-- **业务逻辑独立于框架**
-- **业务逻辑独立于通信方式（HTTP / GraphQL / Mock）**
-- UI 可重写，业务不动
+只允许 **外层 → 内层** 依赖：
 
-### 1.2 不追求的目标
-
-- 不追求文件最少
-- 不追求“看起来很高级”
-- 不强制所有项目都用（小项目可不用）
+`UI(views/components)` → `Application(usecases)` → `Domain`
+`Infrastructure(adapters)` → 依赖 `Application` 的 ports 并实现它
+`Domain` 不依赖任何外部（框架/浏览器/网络/状态库）
 
 ---
 
-## 2. 总体分层（Layer Overview）
+## 2) 分层定义（职责边界）
 
-前端 Clean Architecture 采用**由内向外**的分层模型：
+## 2.1 Domain（领域层：纯业务）
 
-```text
-[ Domain ]
-    ↑
-[ Application ]
-    ↑
-[ Interface Adapter ]
-    ↑
-[ Infrastructure ]
-    ↑
-[ UI / Framework ]
-````
+**放什么**
 
-### 核心依赖规则（Dependency Rule）
+* Entities（实体）、Value Objects（值对象）
+* 领域规则/计算（纯函数或纯方法）
+* 领域错误（DomainError）
+* 领域服务（如果确实需要：跨实体的纯规则）
 
-> **所有依赖只能指向内层，禁止反向依赖**
-
-* Domain 不依赖任何外层
-* Application 不依赖 UI / Framework
-* UI 永远不能包含业务规则
-
----
-
-## 3. 各层职责定义（Layer Responsibilities）
-
----
-
-## 3.1 Domain Layer（领域层）
-
-### 职责
-
-* 描述**业务是什么**
-* 表达业务规则、约束、不变量
-* 不关心“怎么展示”“怎么请求接口”
-
-### 允许内容
-
-* Entity / Value Object
-* Domain Rule
-* Validator
-* Domain Enum / 常量
-
-### 禁止内容
+**不放什么**
 
 * HTTP / fetch / axios
-* UI 状态
-* Framework API
-* LocalStorage / Cookie
+* localStorage / sessionStorage / cookie
+* router、UI 状态、组件、hooks
+* 第三方 SDK
+* 框架类型（React/Vue 特有类型）
 
-### 示例
+**特点**
 
-```text
-domain/
- ├─ model/
- │   └─ User.ts
- ├─ rule/
- │   └─ CanSubmitOrderRule.ts
- └─ validator/
-     └─ EmailValidator.ts
-```
-
-> **Domain 层代码应可以被直接拷贝到 Node.js / 后端而无需修改**
+* 纯 TypeScript（或纯 JS），可在 Node 环境跑测试
+* 业务规则的唯一可信来源
 
 ---
 
-## 3.2 Application Layer（应用层 / Use Case）
+## 2.2 Application（应用层：用例编排）
 
-### 职责
+**放什么**
 
-* 描述**用户做了一件事会发生什么**
-* 编排 Domain 对象与规则
-* 定义对外部世界的“需求接口（Port）”
+* UseCase（用例）：以“用户意图/动作”命名
 
-### 允许内容
+  * 例：`Login`, `GetMe`, `CreateOrder`, `SubmitOnboarding`
+* 应用级 DTO（输入/输出模型）
+* 用例级错误（UseCaseError，可选）
+* ports（接口）的调用编排：先后顺序、聚合、转换
 
-* UseCase / Application Service
-* Port（接口定义）
-* 业务流程控制
+**不放什么**
 
-### 禁止内容
+* UI 框架代码（组件、hooks、store 具体实现）
+* 直接 fetch/localStorage/router
+* 复杂业务规则（应下沉到 Domain）
 
-* 直接使用 HTTP / SDK
-* 操作 UI 状态
-* 引入框架依赖
+**特点**
 
-### 示例
-
-```text
-application/
- ├─ usecase/
- │   └─ SubmitOrderUseCase.ts
- └─ port/
-     ├─ OrderApiPort.ts
-     └─ AuthPort.ts
-```
+* 不知道“界面长什么样”，只知道“要完成什么动作”
+* 只通过 **Ports** 接触外部世界
 
 ---
 
-## 3.3 Interface Adapter Layer（接口适配层）
+## 2.3 Ports（端口：对外依赖的抽象接口）
 
-### 职责
+> 有些团队把 ports 放在 application 内部，这也可以；关键是：**它们是接口，不是实现**。
 
-* 在 **UseCase 世界** 与 **UI 世界** 之间做翻译
-* 将业务结果转换为 UI 可消费的状态
+**放什么**
 
-### 核心概念
+* `ApiPort`：后端请求抽象（如 `UserApiPort`, `OrderApiPort`）
+* `StoragePort`：token/缓存读写抽象
+* `ClockPort`：时间抽象（可选）
+* `LoggerPort`：日志抽象（可选）
 
-* ViewModel
-* Presenter
+**不放什么**
 
-### 允许内容
+* 任何实现（不写 fetch / localStorage）
+* 任何框架/浏览器 API
 
-* 状态映射
-* 错误映射
-* UI 友好结构转换
+**特点**
 
-### 禁止内容
-
-* 直接访问 DOM
-* 编写业务规则
-
-### 示例
-
-```text
-interfaceadapter/
- ├─ viewmodel/
- │   └─ OrderViewModel.ts
- └─ presenter/
-     └─ OrderPresenter.ts
-```
-
-> **ViewModel = 前端的 Controller**
+* Application 通过 ports “声明需要什么能力”
+* Infrastructure 负责提供实现
 
 ---
 
-## 3.4 Infrastructure Layer（基础设施层）
+## 2.4 Infrastructure（基础设施：适配器/实现）
 
-### 职责
+**放什么**
 
-* 提供 Application Layer 所需 Port 的**具体实现**
-* 封装第三方技术细节
+* HTTP 适配器：`fetch/axios` 实现各类 `*ApiPort`
+* 存储适配器：`localStorage/sessionStorage` 实现 `StoragePort`
+* 第三方 SDK 适配器（如 Cognito SDK 包装成 port 实现）
+* 配置加载（env/config）与实例装配（composition root）
 
-### 允许内容
+**不放什么**
 
-* HTTP 实现
-* SDK 调用
-* Storage（localStorage / indexedDB）
-* Auth Provider
+* 业务规则（Domain 的活）
+* 用例编排（Application 的活）
+* UI 展示（UI 的活）
 
-### 示例
+**特点**
 
-```text
-infrastructure/
- ├─ api/
- │   └─ OrderApiHttp.ts
- ├─ auth/
- │   └─ AuthProvider.ts
- └─ storage/
-     └─ TokenStorage.ts
-```
-
-> **Infrastructure 可以被替换，但 Application 不需要改**
+* 外界变化（HTTP 细节、SDK、存储方案）通常只改这里
 
 ---
 
-## 3.5 UI / Framework Layer（表现层）
+## 2.5 UI（界面层：页面/组件/状态）
 
-### 职责
+**放什么**
 
-* 页面展示
-* 事件绑定
-* 路由切换
+* 页面、组件、UI 状态管理（store）
+* 表单输入收集、展示 loading/error
+* 调用 usecase、渲染结果
+* 路由声明（routes）
 
-### 允许内容
+**不放什么**
 
-* 组件
-* 页面
-* 样式
-* 框架生命周期
+* 业务规则（Domain）
+* 用例流程编排（Application）
+* 外部细节直接调用（fetch/localStorage）——除非这是最外层装配处
 
-### 禁止内容
+**特点**
 
-* 业务规则
-* 直接操作 Domain
-
-### 示例
-
-```text
-ui/
- ├─ pages/
- │   └─ OrderPage.vue
- └─ components/
-     └─ OrderForm.vue
-```
+* UI 的改动不应该迫使 Domain/Application 改动
 
 ---
 
-## 4. 数据与控制流（Flow）
+## 3) 数据模型边界（最重要的隐形坑）
 
-### 4.1 用户操作流
+为了避免层间“模型污染”，建议使用三类模型：
 
-```text
-User Action
-   ↓
-UI Component
-   ↓
-ViewModel
-   ↓
-UseCase
-   ↓
-Domain
+1. **Domain Models**：领域实体/值对象（严谨、含规则）
+2. **DTO（Application/Ports）**：用例输入输出、接口传输（扁平、可序列化）
+3. **View Models（UI）**：只为展示服务（可能合并字段、格式化）
+
+**转换位置建议**
+
+* `Infrastructure`：API JSON ↔ DTO
+* `Application`：DTO ↔ Domain（创建实体/调用规则/输出 DTO）
+* `UI`：UseCase 输出 ↔ ViewModel（格式化）
+
+---
+
+## 4) 目录结构模板（框架无关）
+
+> 这是一种清晰且常用的组织方式。你可以按 feature 切，也可以按 layer 切；下面给一个“按层 + feature 聚合”的折中结构。
+
 ```
+src/
+  domain/
+    entities/
+    values/
+    errors/
+    services/              # 仅纯领域服务
 
-### 4.2 外部调用流
+  application/
+    usecases/
+      <feature>/
+        <Feature>UseCase.ts
+        dto.ts
+        errors.ts          # 可选
+    ports/
+      api/
+      storage/
+      clock/
+      logger/
 
-```text
-UseCase
-   ↓
-Port (Interface)
-   ↓
-Infrastructure Implementation
+  infrastructure/
+    http/
+      client.ts            # fetch/axios 封装（最薄）
+      adapters/            # 实现 api ports
+    storage/
+      adapters/            # 实现 StoragePort
+    composition/
+      container.ts         # 依赖注入/实例装配（Composition Root）
+    config/
+      env.ts
+
+  ui/
+    pages/
+    components/
+    stores/                # pinia/redux/zustand 等
+    router/
+    viewmodels/
 ```
 
 ---
 
-## 5. 架构约束（Hard Rules）
+## 5) 最小装配规则（Composition Root）
 
-### 必须遵守
+必须存在**唯一装配点**（例如 `infrastructure/composition/container.ts`）：
 
-* UI 层 **不得** 引入 Domain Rule
-* UseCase **不得** import Framework
-* Domain **不得** import 任何外部库
+* 由这里创建 ports 的具体实现（http/storage/sdk）
+* 将实现注入给 usecases（或注入给 application service）
+* UI 只从这里拿到“可调用的用例入口”（或 usecase factory）
 
-### 建议遵守
-
-* 一个文件只做一件事
-* UseCase 名字使用动词（Submit / Apply / Get）
-* Domain 名字使用名词
+> 目的：避免 UI 到处 new Adapter / new Client，导致依赖散落。
 
 ---
 
-## 6. 适用范围判断
+## 6) 允许的“依赖关系清单”
 
-### 推荐使用
+✅ 允许：
 
-* 多角色系统
-* 复杂状态流转
-* 中大型前端项目
-* 生命周期 ≥ 1 年
+* UI → application（调用 usecase）
+* application → domain（调用实体/规则）
+* application → ports（接口类型）
+* infrastructure → ports（实现接口）
+* infrastructure → application（为了装配 usecase）
 
-### 不推荐使用
+❌ 禁止：
 
-* 简单展示页
-* 一次性 Demo
-* 表单 + CRUD 小工具
+* domain → 任何外层（application/ui/infrastructure）
+* application → infrastructure（用例里直接 import http/storage 实现）
+* UI → infrastructure（页面直接 fetch/localStorage）
 
----
-
-## 7. 核心价值总结
-
-> **前端 Clean Architecture 的价值不是“分层”，而是：**
-
-* UI 可变，业务稳定
-* 技术可换，规则不动
-* 项目越大，维护成本越低
+  * 例外：**唯一装配点**可以接触 infrastructure
 
 ---
 
-## 8. 结束语
-
-Clean Architecture 不是银弹。
-但在复杂前端项目中，它是**最可靠的长期结构选择之一**。
-
-```
-
----
-
-如果你愿意，下一步我可以帮你做三件事之一（一次只做一件）：
-
-1. 把这份文档**压缩成 Codex / AI System Prompt 版本**
-2. 写一份 **Frontend + Backend 共用的 Clean Architecture Canon**
-3. 给你一份 **“什么时候不要用 Clean Architecture”的反模式清单**
-
-你选一个，我继续。
-```
+如果你愿意，我可以再给一份**“超短版（1页）”**，专门用来贴到仓库根目录当约束规范（只包含：分层 + 依赖方向 + 目录模板 + 禁止清单）。
