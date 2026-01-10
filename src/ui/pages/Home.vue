@@ -23,6 +23,9 @@
             <p v-if="statusDetail" class="text-sm text-slate-400">
               {{ statusDetail }}
             </p>
+            <p v-if="userEmail" class="text-sm text-emerald-200">
+              {{ userEmail }}
+            </p>
           </div>
           <div class="flex flex-wrap gap-3">
             <button
@@ -31,6 +34,14 @@
               @click="startAuth"
             >
               Start Authenticate
+            </button>
+            <button
+              v-if="session"
+              class="rounded-lg border border-rose-400/60 px-4 py-2 text-sm font-semibold text-rose-100 hover:bg-rose-500/10"
+              type="button"
+              @click="signOut"
+            >
+              Logout
             </button>
           </div>
         </div>
@@ -47,6 +58,7 @@
             <p><span class="text-slate-400">ID Token：</span>{{ previewToken(session.idToken) }}</p>
             <p><span class="text-slate-400">Refresh Token：</span>{{ previewToken(session.refreshToken) }}</p>
             <p><span class="text-slate-400">过期：</span>{{ session.isExpired() ? "已过期" : "有效" }}</p>
+            <p v-if="userEmail"><span class="text-slate-400">用户邮箱：</span>{{ userEmail }}</p>
           </div>
           <p v-else class="mt-3 text-sm text-slate-400">暂无 token，完成登录后将显示。</p>
         </div>
@@ -71,6 +83,23 @@ import { authContainer } from "../../infrastructure/composition/container";
 const session = ref(null);
 const errorMessage = ref("");
 
+const decodeJwtPayload = (token) => {
+  if (!token) {
+    return null;
+  }
+  const parts = token.split(".");
+  if (parts.length < 2) {
+    return null;
+  }
+  const normalized = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
+  try {
+    return JSON.parse(atob(padded));
+  } catch (error) {
+    return null;
+  }
+};
+
 const statusLabel = computed(() => {
   if (!session.value) {
     return "未登录";
@@ -88,6 +117,14 @@ const statusDetail = computed(() => {
   return "token 已保存在 localStorage。";
 });
 
+const userEmail = computed(() => {
+  if (!session.value?.idToken) {
+    return "";
+  }
+  const payload = decodeJwtPayload(session.value.idToken);
+  return payload?.email || payload?.["cognito:username"] || "";
+});
+
 const previewToken = (token) => {
   if (!token) {
     return "-";
@@ -102,6 +139,17 @@ const startAuth = async () => {
     window.location.assign(url);
   } catch (error) {
     errorMessage.value = error.message || "无法发起认证流程。";
+  }
+};
+
+const signOut = async () => {
+  errorMessage.value = "";
+  try {
+    const url = await authContainer.signOutUseCase.execute();
+    session.value = null;
+    window.location.assign(url);
+  } catch (error) {
+    errorMessage.value = error.message || "无法完成退出。";
   }
 };
 
