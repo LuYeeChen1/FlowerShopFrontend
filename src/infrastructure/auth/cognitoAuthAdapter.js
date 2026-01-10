@@ -11,8 +11,9 @@ const buildUrl = (base, params) => {
 };
 
 export class CognitoAuthAdapter {
-  constructor({ fetchImpl = fetch } = {}) {
-    this.fetchImpl = fetchImpl;
+  constructor({ fetchImpl } = {}) {
+    const baseFetch = fetchImpl || fetch;
+    this.fetchImpl = (...args) => baseFetch(...args);
   }
 
   buildAuthorizationUrl({ mode, state, codeChallenge }) {
