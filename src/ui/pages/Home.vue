@@ -50,16 +50,26 @@
     </section>
 
     <section id="feature-menu" class="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
-      <div>
-        <p class="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300">
-          功能菜单
-        </p>
-        <h2 class="text-2xl font-semibold">顾客端功能一览</h2>
-        <p class="text-sm text-slate-400">
-          点击 Header 的菜单符号可快速跳转到这里。
-        </p>
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p class="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300">
+            功能菜单
+          </p>
+          <h2 class="text-2xl font-semibold">顾客端功能一览</h2>
+          <p class="text-sm text-slate-400">
+            点击 Header 的菜单符号可快速跳转到这里。
+          </p>
+        </div>
+        <button
+          class="rounded-lg border border-emerald-300/50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-100 transition hover:border-emerald-200 hover:text-emerald-200 disabled:cursor-not-allowed disabled:border-slate-700 disabled:text-slate-500 disabled:hover:border-slate-700 disabled:hover:text-slate-500"
+          type="button"
+          :disabled="!hasAccess"
+          @click="toggleCustomerMenu"
+        >
+          {{ menuButtonLabel }}
+        </button>
       </div>
-      <div class="grid gap-3 text-sm text-slate-200 sm:grid-cols-2">
+      <div v-if="hasAccess && isOpen" class="grid gap-3 text-sm text-slate-200 sm:grid-cols-2">
         <router-link
           v-for="item in featureMenuItems"
           :key="item.path"
@@ -69,6 +79,9 @@
           {{ item.label }}
         </router-link>
       </div>
+      <p v-else class="text-sm text-slate-400">
+        {{ menuStatusMessage }}
+      </p>
     </section>
 
     <section class="grid gap-4 sm:grid-cols-2">
@@ -102,6 +115,7 @@ import { authContainer } from "../../infrastructure/composition/container";
 import { useCognitoUserInfo } from "../composables/useCognitoUserInfo";
 
 const injectedSession = inject("authSession", null);
+const injectedMenuState = inject("customerMenuState", null);
 const session = injectedSession?.session ?? ref(null);
 const refreshSession = injectedSession?.refreshSession;
 const errorMessage = ref("");
@@ -125,6 +139,25 @@ const statusDetail = computed(() => {
 
 const { email } = useCognitoUserInfo(session);
 const userEmail = computed(() => email.value);
+const hasAccess = computed(() => injectedMenuState?.hasAccess?.value ?? false);
+const isOpen = computed(() => injectedMenuState?.isOpen?.value ?? false);
+
+const menuButtonLabel = computed(() => {
+  if (!hasAccess.value) {
+    return "需要 CUSTOMER 权限";
+  }
+  return isOpen.value ? "收起菜单" : "展开菜单";
+});
+
+const menuStatusMessage = computed(() => {
+  if (!hasAccess.value) {
+    return "请先登录并加入 CUSTOMER 组后查看顾客端功能。";
+  }
+  if (!isOpen.value) {
+    return "菜单已收起，点击上方按钮展开。";
+  }
+  return "";
+});
 
 const featureMenuItems = [
   { label: "身份与账户", path: "/customer/account" },
@@ -150,6 +183,12 @@ const previewToken = (token) => {
     return "-";
   }
   return `${token.slice(0, 20)}...${token.slice(-8)}`;
+};
+
+const toggleCustomerMenu = () => {
+  if (injectedMenuState?.toggle) {
+    injectedMenuState.toggle();
+  }
 };
 
 const startAuth = async () => {
