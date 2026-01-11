@@ -7,10 +7,12 @@
         </p>
         <p class="text-lg font-semibold">Cognito Portal</p>
         <button
-          class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 text-slate-200 transition hover:border-emerald-300 hover:text-emerald-200"
+          class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 text-slate-200 transition hover:border-emerald-300 hover:text-emerald-200 disabled:cursor-not-allowed disabled:border-slate-800 disabled:text-slate-500 disabled:hover:border-slate-800 disabled:hover:text-slate-500"
           type="button"
           aria-label="查看功能菜单"
-          @click="scrollToFeatureMenu"
+          :aria-disabled="!canOpenMenu"
+          :disabled="!canOpenMenu"
+          @click="handleMenuClick"
         >
           <span class="text-xl leading-none">≡</span>
         </button>
@@ -27,7 +29,7 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, inject, nextTick } from "vue";
 
 const props = defineProps({
   userEmail: {
@@ -47,10 +49,24 @@ const userGroupsLabel = computed(() => {
   return props.userGroups.join(", ");
 });
 
+const customerMenuState = inject("customerMenuState", null);
+const canOpenMenu = computed(() => customerMenuState?.hasAccess?.value ?? false);
+
 const scrollToFeatureMenu = () => {
   const target = document.getElementById("feature-menu");
   if (target) {
     target.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+};
+
+const handleMenuClick = async () => {
+  if (!canOpenMenu.value) {
+    return;
+  }
+  if (customerMenuState?.open) {
+    customerMenuState.open();
+  }
+  await nextTick();
+  scrollToFeatureMenu();
 };
 </script>
