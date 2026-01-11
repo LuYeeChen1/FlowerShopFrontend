@@ -34,26 +34,29 @@ const decodeJwtPayload = (token) => {
   }
 };
 
-const getCustomerAccessState = () => {
+const getAuthState = () => {
   const session = authContainer.getSessionUseCase.execute();
   if (!session || session.isExpired()) {
-    return { isAuthenticated: false, hasAccess: false };
+    return { isAuthenticated: false, groups: [] };
   }
   const payload = decodeJwtPayload(session.idToken);
   const rawGroups = payload?.["cognito:groups"];
   const groups = Array.isArray(rawGroups) ? rawGroups : rawGroups ? [rawGroups] : [];
-  return {
-    isAuthenticated: true,
-    hasAccess: groups.includes("CUSTOMER"),
-  };
+  return { isAuthenticated: true, groups };
 };
 
 router.beforeEach((to) => {
-  if (!to.path.startsWith("/customer")) {
+  const requiresAuth = to.matched.some((record) => record.meta?.requiresAuth);
+  if (!requiresAuth) {
     return true;
   }
-  const { isAuthenticated, hasAccess } = getCustomerAccessState();
-  if (!isAuthenticated || !hasAccess) {
+  const requiredGroups = to.matched
+    .flatMap((record) => record.meta?.requiredGroups || [])
+    .filter((group, index, self) => self.indexOf(group) === index);
+  const { isAuthenticated, groups } = getAuthState();
+  const hasRequiredGroups =
+    requiredGroups.length === 0 || requiredGroups.some((group) => groups.includes(group));
+  if (!isAuthenticated || !hasRequiredGroups) {
     return { path: "/" };
   }
   return true;
