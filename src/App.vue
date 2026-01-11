@@ -27,10 +27,23 @@ onMounted(() => {
   refreshSession();
 });
 
-provide("authSession", { session, refreshSession });
-
 const { email, groups } = useCognitoUserInfo(session);
 
+const isAuthenticated = computed(
+  () => !!session.value && !session.value.isExpired()
+);
 const userEmail = computed(() => email.value);
 const userGroups = computed(() => groups.value);
+const hasCustomerMenuAccess = computed(
+  () => isAuthenticated.value && userGroups.value.includes("CUSTOMER")
+);
+
+provide("authSession", {
+  session,
+  refreshSession,
+  isAuthenticated,
+  hasCustomerMenuAccess,
+  userEmail,
+  userGroups,
+});
 </script>

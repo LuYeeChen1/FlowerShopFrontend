@@ -7,6 +7,7 @@
         </p>
         <p class="text-lg font-semibold">Cognito Portal</p>
         <button
+          v-if="hasCustomerMenuAccess"
           class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 text-slate-200 transition hover:border-emerald-300 hover:text-emerald-200"
           type="button"
           aria-label="查看功能菜单"
@@ -27,7 +28,7 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, inject } from "vue";
 
 const props = defineProps({
   userEmail: {
@@ -39,6 +40,11 @@ const props = defineProps({
     default: () => [],
   },
 });
+
+const injectedSession = inject("authSession", null);
+const hasCustomerMenuAccess = computed(
+  () => injectedSession?.hasCustomerMenuAccess?.value ?? false
+);
 
 const userGroupsLabel = computed(() => {
   if (!props.userGroups.length) {

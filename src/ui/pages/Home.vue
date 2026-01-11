@@ -49,7 +49,11 @@
       </p>
     </section>
 
-    <section id="feature-menu" class="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
+    <section
+      v-if="isCustomerMenuVisible"
+      id="feature-menu"
+      class="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/40 p-6"
+    >
       <div>
         <p class="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300">
           功能菜单
@@ -105,6 +109,10 @@ const injectedSession = inject("authSession", null);
 const session = injectedSession?.session ?? ref(null);
 const refreshSession = injectedSession?.refreshSession;
 const errorMessage = ref("");
+const hasCustomerMenuAccess = computed(
+  () => injectedSession?.hasCustomerMenuAccess?.value ?? false
+);
+const isCustomerMenuVisible = computed(() => hasCustomerMenuAccess.value);
 
 const statusLabel = computed(() => {
   if (!session.value) {
