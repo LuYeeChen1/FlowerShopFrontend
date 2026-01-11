@@ -1,25 +1,14 @@
-// src/router/index.js
 import { createRouter, createWebHistory } from "vue-router";
-import Home from "../ui/pages/Home.vue";
-import Callback from "../ui/pages/Callback.vue";
-import SignedOut from "../ui/pages/SignedOut.vue";
+import menuRoutes from "./menuRoutes";
+import customerRoutes from "./customer";
+import sellerRoutes from "./seller";
+import adminRoutes from "./admin";
 
 const routes = [
-  {
-    path: "/",
-    name: "Home",
-    component: Home,
-  },
-  {
-    path: "/callback",
-    name: "Callback",
-    component: Callback,
-  },
-  {
-    path: "/signed-out",
-    name: "SignedOut",
-    component: SignedOut,
-  },
+  ...menuRoutes,
+  ...customerRoutes,
+  ...sellerRoutes,
+  ...adminRoutes,
 ];
 
 const router = createRouter({
