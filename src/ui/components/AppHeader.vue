@@ -32,18 +32,6 @@
             <p v-else class="px-3 py-2 text-slate-400">
               请先登录并加入 CUSTOMER 或 SELLER 组后查看功能菜单。
             </p>
-            <div v-if="isAuthenticated" class="mt-2 border-t border-slate-800 pt-2">
-              <button
-                class="flex w-full items-center rounded-lg px-3 py-2 text-left font-semibold text-rose-100 transition hover:bg-rose-500/10"
-                type="button"
-                @click="signOut"
-              >
-                Logout
-              </button>
-              <p v-if="errorMessage" class="px-3 pt-2 text-xs text-rose-200">
-                {{ errorMessage }}
-              </p>
-            </div>
           </div>
         </div>
         <button
@@ -58,12 +46,26 @@
         </p>
         <p class="text-lg font-semibold">Cognito Portal</p>
       </div>
-      <div class="text-right text-sm text-slate-300">
-        <p v-if="userEmail" class="font-medium text-slate-100">Email：{{ userEmail }}</p>
-        <p>
-          Group：
-          <span class="text-slate-100">{{ userGroupsLabel }}</span>
-        </p>
+      <div class="flex flex-wrap items-center justify-end gap-4 text-right text-sm text-slate-300">
+        <div>
+          <p v-if="userEmail" class="font-medium text-slate-100">Email：{{ userEmail }}</p>
+          <p>
+            Group：
+            <span class="text-slate-100">{{ userGroupsLabel }}</span>
+          </p>
+        </div>
+        <div v-if="isAuthenticated" class="flex flex-col items-end gap-1">
+          <button
+            class="inline-flex items-center rounded-full border border-rose-400/60 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-rose-100 transition hover:border-rose-300 hover:text-rose-50"
+            type="button"
+            @click="signOut"
+          >
+            Logout
+          </button>
+          <p v-if="errorMessage" class="text-xs text-rose-200">
+            {{ errorMessage }}
+          </p>
+        </div>
       </div>
     </div>
   </header>
