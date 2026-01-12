@@ -144,14 +144,14 @@ const isOpen = computed(() => injectedMenuState?.isOpen?.value ?? false);
 
 const menuButtonLabel = computed(() => {
   if (!hasAccess.value) {
-    return "需要 CUSTOMER 权限";
+    return "需要 CUSTOMER 或 SELLER 权限";
   }
   return isOpen.value ? "收起菜单" : "展开菜单";
 });
 
 const menuStatusMessage = computed(() => {
   if (!hasAccess.value) {
-    return "请先登录并加入 CUSTOMER 组后查看顾客端功能。";
+    return "请先登录并加入 CUSTOMER 或 SELLER 组后查看顾客端功能。";
   }
   if (!isOpen.value) {
     return "菜单已收起，点击上方按钮展开。";
@@ -160,22 +160,22 @@ const menuStatusMessage = computed(() => {
 });
 
 const featureMenuItems = [
-  { label: "身份与账户", path: "/customer/account" },
-  { label: "个人资料管理", path: "/customer/profile" },
-  { label: "地址簿管理", path: "/customer/address-book" },
-  { label: "商品发现（浏览 / 搜索 / 筛选）", path: "/customer/catalog" },
-  { label: "商品详情", path: "/customer/product-detail" },
-  { label: "收藏 / 愿望清单", path: "/customer/wishlist" },
-  { label: "购物车", path: "/customer/cart" },
-  { label: "结算", path: "/customer/checkout" },
-  { label: "订单管理", path: "/customer/orders" },
-  { label: "支付", path: "/customer/payment" },
-  { label: "物流查看", path: "/customer/shipment" },
-  { label: "评价系统", path: "/customer/reviews" },
-  { label: "售后（退款 / 退货 / 换货）", path: "/customer/after-sales" },
-  { label: "优惠券", path: "/customer/coupons" },
-  { label: "通知中心", path: "/customer/notifications" },
-  { label: "客服工单", path: "/customer/support" },
+  { label: "身份与账户", path: "/account" },
+  { label: "个人资料管理", path: "/profile" },
+  { label: "地址簿管理", path: "/address-book" },
+  { label: "商品发现（浏览 / 搜索 / 筛选）", path: "/catalog" },
+  { label: "商品详情", path: "/product-detail" },
+  { label: "收藏 / 愿望清单", path: "/wishlist" },
+  { label: "购物车", path: "/cart" },
+  { label: "结算", path: "/checkout" },
+  { label: "订单管理", path: "/orders" },
+  { label: "支付", path: "/payment" },
+  { label: "物流查看", path: "/shipment" },
+  { label: "评价系统", path: "/reviews" },
+  { label: "售后（退款 / 退货 / 换货）", path: "/after-sales" },
+  { label: "优惠券", path: "/coupons" },
+  { label: "通知中心", path: "/notifications" },
+  { label: "客服工单", path: "/support" },
 ];
 
 const previewToken = (token) => {
