@@ -17,12 +17,5 @@
         <li>评价历史记录</li>
       </ul>
     </section>
-
-    <router-link
-      class="inline-flex w-fit items-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 hover:border-emerald-300 hover:text-emerald-200"
-      to="/"
-    >
-      返回首页
-    </router-link>
   </main>
 </template>
