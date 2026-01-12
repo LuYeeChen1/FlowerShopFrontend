@@ -120,7 +120,7 @@ const isAuthenticated = computed(() => {
 });
 
 const featureMenuItems = [
-  { label: "Home", path: "/" },
+  { label: "首页", path: "/" },
   { label: "身份与账户", path: "/account" },
   { label: "个人资料管理", path: "/profile" },
   { label: "地址簿管理", path: "/address-book" },
