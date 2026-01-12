@@ -46,6 +46,10 @@ const getAuthState = () => {
 };
 
 router.beforeEach((to) => {
+  const { isAuthenticated, groups } = getAuthState();
+  if (isAuthenticated && groups.includes("ADMIN") && to.path === "/") {
+    return { path: "/admin" };
+  }
   const requiresAuth = to.matched.some((record) => record.meta?.requiresAuth);
   if (!requiresAuth) {
     return true;
@@ -53,7 +57,6 @@ router.beforeEach((to) => {
   const requiredGroups = to.matched
     .flatMap((record) => record.meta?.requiredGroups || [])
     .filter((group, index, self) => self.indexOf(group) === index);
-  const { isAuthenticated, groups } = getAuthState();
   const hasRequiredGroups =
     requiredGroups.length === 0 || requiredGroups.some((group) => groups.includes(group));
   if (!isAuthenticated || !hasRequiredGroups) {
