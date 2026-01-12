@@ -113,7 +113,9 @@ const handleMenuClick = async () => {
 };
 
 const handleBack = () => {
-  if (window.history.length > 1) {
+  const previousPath = router.options.history.state?.back;
+  const blockedPaths = new Set(["/signed-out", "/callback"]);
+  if (previousPath && !blockedPaths.has(previousPath)) {
     router.back();
     return;
   }
