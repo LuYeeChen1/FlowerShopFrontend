@@ -33,42 +33,4 @@ const { email, groups } = useCognitoUserInfo(session);
 
 const userEmail = computed(() => email.value);
 const userGroups = computed(() => groups.value);
-const isAuthenticated = computed(() => Boolean(session.value && !session.value.isExpired()));
-const hasCustomerAccess = computed(() => {
-  return isAuthenticated.value && userGroups.value.includes("CUSTOMER");
-});
-
-const customerMenuState = (() => {
-  const isOpen = ref(false);
-
-  const close = () => {
-    isOpen.value = false;
-  };
-
-  const open = () => {
-    if (!isAuthenticated.value || !hasCustomerAccess.value) {
-      isOpen.value = false;
-      return;
-    }
-    isOpen.value = true;
-  };
-
-  const toggle = () => {
-    if (!isAuthenticated.value || !hasCustomerAccess.value) {
-      isOpen.value = false;
-      return;
-    }
-    isOpen.value = !isOpen.value;
-  };
-
-  return {
-    isOpen,
-    hasAccess: hasCustomerAccess,
-    open,
-    close,
-    toggle,
-  };
-})();
-
-provide("customerMenuState", customerMenuState);
 </script>
