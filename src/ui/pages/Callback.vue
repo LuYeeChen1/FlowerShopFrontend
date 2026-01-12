@@ -6,12 +6,6 @@
       <p v-if="errorMessage" class="rounded-lg border border-rose-500/40 bg-rose-500/10 px-4 py-2 text-sm text-rose-200">
         {{ errorMessage }}
       </p>
-      <router-link
-        class="text-sm font-semibold text-emerald-300 hover:text-emerald-200"
-        to="/"
-      >
-        返回首页
-      </router-link>
     </section>
   </main>
 </template>
